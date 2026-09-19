@@ -8,7 +8,8 @@
 | 1 — Backend Foundation | COMPLETE | 2026-09-19 | FastAPI, settings, SQLAlchemy, Alembic, Redis, Celery, logging, errors, health API, and tests validated |
 | 2 — Domain Model | COMPLETE | 2026-09-19 | 53 canonical tables, frozen migration, tenant repository/service structure, and isolation tests |
 | 3 — Synthetic Demo Data | COMPLETE | 2026-09-19 | Deterministic 892-record Nova Electronics network, idempotent seed command, scenario contracts, and PostgreSQL integration test |
-| 4–13 — Backend capability phases | NOT STARTED | — | — |
+| 4 — Workflow Engine | COMPLETE | 2026-09-19 | Version lifecycle, immutable publication, deep cloning, DAG validation, stage registry/contracts, durable execution, retries, and failure policies |
+| 5–13 — Backend capability phases | NOT STARTED | — | — |
 | 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
 
 ## Phase 0 decisions
@@ -55,3 +56,11 @@
 - **Dataset:** 892 records covering RBAC, 18 suppliers, 40 materials, 10 products, 10 BOMs, 8 facilities, 176 inventory snapshots, 30 purchase orders, 42 customer orders, 20 shipments, and supporting lines/events/history.
 - **Tests executed:** exact dataset contract, stable identity and tenant-scope checks, supplier and BOM topology, operational pressure signals, repeat seeding against PostgreSQL in CI, Ruff, strict mypy, and the full backend suite.
 - **Remaining technical debt:** synthetic data is intentionally static and represents one tenant; disruption incidents and derived impact/risk records begin in their dedicated capability phases.
+
+## Phase 4 record
+
+- **Date:** 2026-09-19
+- **Major files:** `backend/app/workflows`, `backend/app/services/workflows.py`, `backend/app/repositories/workflows.py`, `backend/tests/test_workflow_engine.py`, and `docs/workflow-engine.md`.
+- **Major decisions:** persisted configuration selects versioned registry handlers; NetworkX validates and orders the DAG; service methods are the workflow mutation boundary; published content is immutable and changes require a deep-cloned draft; runtime execution is deterministic and sequential before later Celery parallelization.
+- **Tests executed:** topological ordering, cycle/self/disabled-dependency rejection, versioned handler registration, result-state constraints, draft validation, publication immutability, deep version cloning, retry recovery, durable run/stage-run persistence, PostgreSQL lifecycle integration, Ruff, strict mypy, and the complete backend suite.
+- **Remaining technical debt:** queue dispatch, conditional-edge evaluation, approval resumption, replay APIs, and parallel branch execution are intentionally deferred until their dependent capability phases. Workflow management HTTP APIs arrive before the frontend management phase.

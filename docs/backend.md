@@ -19,9 +19,12 @@ flowchart LR
 - `app.core`: validated settings, logging, middleware, and errors.
 - `app.domain`: SQLAlchemy base and, from Phase 2 onward, domain entities and deterministic services.
 - `app.infrastructure`: database sessions, Redis, health checks, and later external adapters.
+- `app.workflows`: stage contracts, versioned handler registry, DAG validation, and execution.
 - `app.worker`: Celery application and safety defaults.
 
 HTTP controllers will translate requests and delegate work; they will not contain business workflow logic.
+
+Workflow authoring and execution use explicit tenant-scoped repositories and services. Published versions are immutable, and only registered, validated stage graphs can execute. See [workflow engine](workflow-engine.md) for the lifecycle and failure semantics.
 
 ## Operational endpoints
 

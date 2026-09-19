@@ -37,3 +37,5 @@ pytest
 The readiness endpoint checks PostgreSQL and Redis. Liveness deliberately does not, so orchestrators can distinguish a failed process from an unavailable dependency.
 
 Repository and service code must receive an explicit `TenantContext`. Use `TenantRepository` or a domain-specific subclass for business data access; direct unscoped reads are not an accepted application pattern.
+
+Workflow code is split across `app.workflows` (contracts, registry, validation, execution), `app.services.workflows` (draft/publish/clone lifecycle), and `app.repositories.workflows` (tenant-scoped persistence). Published workflow versions cannot be changed in place.
