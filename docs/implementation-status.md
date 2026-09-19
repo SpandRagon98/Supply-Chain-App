@@ -11,7 +11,13 @@
 | 4 — Workflow Engine | COMPLETE | 2026-09-19 | Version lifecycle, immutable publication, deep cloning, DAG validation, stage registry/contracts, durable execution, retries, and failure policies |
 | 5 — Connector Framework | COMPLETE | 2026-09-19 | Versioned adapters, ERP/weather/news/shipment/supplier mocks, checkpointed runs, canonical sink boundary, and source lineage |
 | 6 — Signal + Incident Intelligence | COMPLETE | 2026-09-19 | Raw-preserving normalization, deterministic detection, entity resolution, confidence review, incident deduplication, and guarded lifecycle |
-| 7–13 — Backend capability phases | NOT STARTED | — | — |
+| 7 — Supply network + impact | COMPLETE | 2026-09-19 | Deterministic NetworkX BOM traversal, inventory coverage, stockout, customer and revenue exposure |
+| 8 — Risk engine | COMPLETE | 2026-09-19 | Configurable explainable factors and durable risk assessments |
+| 9 — Scenario + optimization | COMPLETE | 2026-09-19 | Feasible mitigation scenarios and OR-Tools CBC objective selection |
+| 10 — AI layer | COMPLETE | 2026-09-19 | Optional structured providers, prompt versioning, and run telemetry |
+| 11 — Recommendation + approval | COMPLETE | 2026-09-19 | Explainable recommendation, approval policy routing, and decision history |
+| 12 — Execution + verification | COMPLETE | 2026-09-19 | Idempotent mock actions, execution results, and outcome resolution logic |
+| 13 — Complete backend validation | COMPLETE | 2026-09-19 | Offline Taiwan Typhoon chain test from signal through verification |
 | 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
 
 ## Phase 0 decisions
@@ -84,3 +90,12 @@
 - **Demo behavior:** the five mock feeds yield 10 canonical signals grouped into 5 incidents; two Taiwan weather records group together, four Singapore port records group together, and the low-confidence Kyoto rumor is review-gated. Five seeded signal sources extend Nova from 897 to 902 records.
 - **Tests executed:** country/unit/identifier normalization, threshold validation, detection/filtering, exact/fuzzy/multi-match resolution, low-confidence review, idempotent replay, weather and port deduplication, lifecycle guards, tenant enforcement, PostgreSQL full mock ingestion, Ruff, strict mypy, and the complete backend suite.
 - **Remaining technical debt:** review assignment APIs, manual entity-match correction, location master data/ports, richer currency and unit conversion, and provider-specific normalization rules remain future work. Phase 7 consumes resolved incidents for graph traversal and impact calculations.
+
+## Phases 7–13 record
+
+- **Date:** 2026-09-19
+- **Major files:** `backend/app/impact`, `backend/app/risk`, `backend/app/optimization`, `backend/app/ai`, `backend/app/recommendations`, `backend/app/execution`, their application services, phase-specific tests, and the corresponding architecture notes in `docs/`.
+- **Major decisions:** business calculations, risk, scenario comparison, recommendation selection, approval routing, and verification remain deterministic and independent from the optional AI provider; each numerical output retains structured source data or calculation lineage; mock execution produces a stable external reference for a given idempotency key.
+- **Taiwan Typhoon validation:** a mock Taiwan weather signal resolves to Formosa's supplier site, traces its material dependencies through the Nova BOM, calculates exposure, scores risk, selects an alternative source with OR-Tools, produces a recommendation, routes approval, executes a mock action, and verifies the predicted protected revenue.
+- **Tests executed:** phase-focused unit tests, strict Ruff and mypy checks, and the complete backend suite. PostgreSQL persistence integration remains exercised in CI where `TEST_DATABASE_URL` is available.
+- **Remaining technical debt:** full authenticated, paginated operational APIs and workflow-stage bindings are the next backend expansion; external production adapters, job scheduling, and a live outcome monitor remain intentionally out of scope before the frontend phases.

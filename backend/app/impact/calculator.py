@@ -164,7 +164,8 @@ class ImpactCalculator:
         }
         for parent in direct_parents - {None}:
             impacted.add(parent)
-            impacted.update(nx.descendants(graph, parent))
+            if graph.has_node(parent):
+                impacted.update(nx.descendants(graph, parent))
         return impacted
 
     def _coverage(
