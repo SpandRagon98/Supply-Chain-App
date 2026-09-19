@@ -108,4 +108,4 @@ Invalid skips and reactivation of closed incidents return a stable conflict erro
 
 ## Editable configuration
 
-Each `SignalSource.configuration` stores the current values for minimum signal confidence, automatic incident confidence, entity match/review thresholds, deduplication hours, capacity utilization, and inventory on-hand thresholds. The Nova seed creates five source configurations matching its five mock connectors. Phase 6 adds these to the dataset, bringing the current seed to 902 records.
+Each `SignalSource.configuration` stores the current values for minimum signal confidence, automatic incident confidence, entity match/review thresholds, deduplication hours, capacity utilization, and inventory on-hand thresholds. The Nova seed creates five source configurations matching its five mock connectors. At Phase 6 this brought the dataset to 902 records; later workflow and decision demo records bring the current seed to 944.

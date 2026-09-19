@@ -22,7 +22,13 @@
 | 15 — App shell | COMPLETE | 2026-09-19 | Responsive sidebar, top bar, navigation, search affordance, and workspace shell |
 | 16 — Command center dashboard | COMPLETE | 2026-09-19 | API-health-aware command center with non-fabricated KPI states |
 | 17 — Operational screens | COMPLETE | 2026-09-19 | Disruptions, network, suppliers, inventory, shipments, and incident-detail screens |
-| 18–25 — Decision screens, workflow UX, simulation, deployment, quality | NOT STARTED | — | — |
+| 18 — Decision screens | COMPLETE | 2026-09-19 | Scenario comparison charts, recommendation evidence, Approval Center, and execution status |
+| 19 — Workflow management | COMPLETE | 2026-09-19 | Tenant-scoped workflow/version APIs, cloning, validation, draft mutation, and publication |
+| 20 — Visual workflow builder | COMPLETE | 2026-09-19 | React Flow DAG, selection, dependency authoring, stage state/config drawer, immutable releases |
+| 21 — Settings, integrations, audit | COMPLETE | 2026-09-19 | Connector, AI, risk, optimization, and filtered audit APIs and screens |
+| 22 — Simulation | COMPLETE | 2026-09-19 | Published workflows execute through the durable backend engine with persisted stage progress |
+| 23 — Full E2E testing | COMPLETE | 2026-09-19 | Desktop/mobile Playwright decision-to-execution journey and viewport checks |
+| 24 — Deployment | COMPLETE | 2026-09-19 | GHCR Actions release, migrations, PostgreSQL, Redis, health gates, server-only authentication, and runbook |
 
 ## Phase 0 decisions
 
@@ -48,7 +54,6 @@
 
 - Docker daemon availability is environment-dependent; Compose syntax can be validated without it, while container health requires a local Docker engine.
 - Domain entities and repository/service abstractions begin in Phase 2; the baseline migration intentionally contains no tables.
-- The frontend remains deferred until complete backend validation.
 - Docker is not installed on the current host, so Compose services could not be started here. Compose validation remains enforced in GitHub Actions.
 - Local tests run on Python 3.14 and expose upstream deprecation warnings from the FastAPI/Starlette test client; CI uses the supported project baseline, Python 3.12.
 
@@ -111,3 +116,12 @@
 - **Major decisions:** original light enterprise design tokens are defined once in global CSS; dashboard, supplier, inventory, shipment, and incident screens consume tenant-scoped read APIs; screens retain explicit unavailable states when an API or tenant data is unreachable, rather than fabricating business values.
 - **Deployment:** CI runs frontend type checking and production builds. `deploy.yml` publishes immutable backend and frontend images to GHCR and supports a protected, manually triggered Docker Compose deployment using GitHub environment secrets.
 - **Tests executed:** TypeScript no-emit type check, production Next build, dependency audit with no reported vulnerabilities, and full backend quality suite. Local Docker Compose runtime validation is blocked because Docker is not installed on this host; CI retains Compose validation.
+
+## Phases 18–24 record
+
+- **Date:** 2026-09-19
+- **Major files:** `backend/app/api/v1/control_plane.py`, `backend/app/workflows/default_handlers.py`, decision/workflow/settings/simulation routes under `frontend/app`, React Flow and decision components under `frontend/components`, Playwright configuration and journey tests, production Compose, and the deployment workflow.
+- **Major decisions:** existing deterministic domains remain the source of truth; approval mutations are RBAC-gated and audited; workflow drafts are the only editable versions; visual edges persist as backend dependencies; simulation invokes the published workflow engine; server-rendered API access uses a server-only shared token and explicit tenant/user identity in production.
+- **Demo expansion:** the idempotent Nova seed now includes a published eight-stage disruption workflow, AI explanation configuration, a lineaged Taiwan typhoon incident, three quantified scenarios, a recommendation, approval request, execution command, and audit event.
+- **Tests executed:** Ruff, strict mypy, 78 backend tests (4 environment-gated skips), TypeScript, production Next build, and six Playwright desktop/mobile journey, responsive-layout, API-failure, and empty-state tests.
+- **Remaining technical debt:** replace the deployment's fixed tenant/user identity with an enterprise OIDC session provider before multi-user production rollout; add provider-specific live connector credentials and monitoring; exercise container startup on a Docker-capable host or CI runner.

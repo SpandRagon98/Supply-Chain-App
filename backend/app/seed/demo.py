@@ -11,8 +11,25 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.base import EntityBase
-from app.domain.enums import ConnectorStatus, FacilityType, OrderStatus, RoleKey, ShipmentStatus
+from app.domain.enums import (
+    ApprovalStatus,
+    ConnectorStatus,
+    ExecutionStatus,
+    FacilityType,
+    FailurePolicy,
+    IncidentStatus,
+    OrderStatus,
+    RiskBand,
+    RoleKey,
+    ScenarioStatus,
+    Severity,
+    ShipmentStatus,
+    SignalCategory,
+    WorkflowVersionStatus,
+)
 from app.domain.models import (
+    ApprovalRequest,
+    AuditLog,
     BillOfMaterial,
     BOMComponent,
     Connector,
@@ -20,26 +37,41 @@ from app.domain.models import (
     Customer,
     CustomerOrder,
     CustomerOrderLine,
+    DisruptionIncident,
     DistributionCenter,
+    ExecutionAction,
     Facility,
+    ImpactAssessment,
+    ImpactMetric,
     InventorySnapshot,
+    LLMModelConfiguration,
     Material,
     MaterialSupplier,
     Organization,
     Plant,
     Product,
+    PromptTemplate,
     PurchaseOrder,
     PurchaseOrderLine,
+    Recommendation,
+    RiskAssessment,
     Role,
+    Scenario,
+    ScenarioAction,
     Shipment,
     ShipmentEvent,
     SignalSource,
+    StageConfiguration,
+    StageDefinition,
+    StageDependency,
     Supplier,
     SupplierRating,
     SupplierSite,
     User,
     UserRole,
     Warehouse,
+    WorkflowDefinition,
+    WorkflowVersion,
 )
 from app.infrastructure.database import async_session_factory
 
@@ -476,6 +508,326 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
             configuration=dict(signal_source_configuration),
         )
         for key, name, connector_type, _adapter in connector_specs
+    )
+
+    workflow_definition = WorkflowDefinition(
+        id=demo_id("workflow-definition", "disruption-response"),
+        organization_id=org_id,
+        key="disruption-response",
+        name="Disruption response",
+        description=(
+            "Detect, assess, prioritize, recommend, approve, execute, and verify a disruption."
+        ),
+        is_active=True,
+    )
+    workflow_version = WorkflowVersion(
+        id=demo_id("workflow-version", "disruption-response:1"),
+        organization_id=org_id,
+        workflow_definition_id=workflow_definition.id,
+        version=1,
+        status=WorkflowVersionStatus.PUBLISHED,
+        published_at=SNAPSHOT_AT,
+        published_by_user_id=user_by_email["admin@nova.example"].id,
+        change_summary="Canonical governed disruption-response workflow",
+    )
+    workflow_stage_specs = (
+        ("detect-disruption", "Detect disruption", "DETECTION"),
+        ("assess-impact", "Assess impact", "IMPACT"),
+        ("score-risk", "Score risk", "RISK"),
+        ("generate-scenarios", "Generate scenarios", "OPTIMIZATION"),
+        ("recommend-action", "Recommend action", "RECOMMENDATION"),
+        ("route-approval", "Route approval", "APPROVAL"),
+        ("execute-mitigation", "Execute mitigation", "EXECUTION"),
+        ("verify-outcome", "Verify outcome", "VERIFICATION"),
+    )
+    workflow_stages = tuple(
+        StageDefinition(
+            id=demo_id("workflow-stage", key),
+            organization_id=org_id,
+            workflow_version_id=workflow_version.id,
+            key=key,
+            name=name,
+            description=f"Deterministic {name.lower()} stage.",
+            stage_type=stage_type,
+            handler=key,
+            handler_version="1.0",
+            position=position,
+            is_enabled=True,
+            input_schema={},
+            output_schema={"type": "object"},
+            configuration_schema={"type": "object"},
+        )
+        for position, (key, name, stage_type) in enumerate(workflow_stage_specs)
+    )
+    workflow_configurations = tuple(
+        StageConfiguration(
+            id=demo_id("workflow-stage-configuration", stage.key),
+            organization_id=org_id,
+            stage_definition_id=stage.id,
+            configuration={"summary": f"{stage.name} completed"},
+            retry_policy={"max_attempts": 2},
+            timeout_seconds=300,
+            failure_policy=FailurePolicy.FAIL_WORKFLOW,
+            approval_requirements=(
+                {"required_role": RoleKey.APPROVER.value} if stage.key == "route-approval" else {}
+            ),
+            ai_configuration={},
+        )
+        for stage in workflow_stages
+    )
+    workflow_dependencies = tuple(
+        StageDependency(
+            id=demo_id("workflow-dependency", f"{previous.key}:{current.key}"),
+            organization_id=org_id,
+            workflow_version_id=workflow_version.id,
+            stage_definition_id=current.id,
+            depends_on_stage_id=previous.id,
+            condition={},
+        )
+        for previous, current in zip(workflow_stages, workflow_stages[1:], strict=False)
+    )
+    llm_configurations = (
+        LLMModelConfiguration(
+            id=demo_id("llm-configuration", "recommendation-explainer"),
+            organization_id=org_id,
+            key="recommendation-explainer",
+            provider="mock",
+            model="deterministic-explainer-v1",
+            is_enabled=True,
+            parameters={"temperature": 0, "max_output_tokens": 800},
+            secret_reference=None,
+        ),
+    )
+    prompt_templates = (
+        PromptTemplate(
+            id=demo_id("prompt-template", "recommendation-rationale:1"),
+            organization_id=org_id,
+            key="recommendation-rationale",
+            purpose="Explain a deterministic recommendation without changing numeric truth.",
+            version=1,
+            status=WorkflowVersionStatus.PUBLISHED,
+            system_template="Explain only the supplied deterministic result and its lineage.",
+            user_template="Summarize recommendation {{ recommendation }}.",
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
+            published_at=SNAPSHOT_AT,
+        ),
+    )
+    incident = DisruptionIncident(
+        id=demo_id("incident", "taiwan-typhoon-2026"),
+        organization_id=org_id,
+        incident_number="INC-2026-0915",
+        title="Typhoon disruption at Taiwan semiconductor supply base",
+        description="Severe weather is constraining production and outbound logistics in Tainan.",
+        incident_type=SignalCategory.WEATHER_DISRUPTION,
+        severity=Severity.HIGH,
+        confidence=decimal("0.96"),
+        status=IncidentStatus.APPROVAL_PENDING,
+        started_at=SNAPSHOT_AT - timedelta(hours=9),
+        expected_end_at=SNAPSHOT_AT + timedelta(days=5),
+        affected_location={"city": "Tainan", "country_code": "TW"},
+        deduplication_key="weather:tw:tainan:2026-09-15",
+        workflow_version_id=workflow_version.id,
+    )
+    impact_assessment = ImpactAssessment(
+        id=demo_id("impact-assessment", "taiwan-typhoon-2026"),
+        organization_id=org_id,
+        incident_id=incident.id,
+        calculated_at=SNAPSHOT_AT,
+        calculation_version="1.0",
+        summary={
+            "affected_supplier": "Formosa Silicon Works",
+            "impacted_materials": 5,
+            "orders_at_risk": 14,
+            "revenue_at_risk": "18450000",
+        },
+    )
+    impact_metrics = (
+        ImpactMetric(
+            id=demo_id("impact-metric", "taiwan-typhoon:revenue-at-risk"),
+            organization_id=org_id,
+            assessment_id=impact_assessment.id,
+            metric_key="revenue_at_risk",
+            numeric_value=decimal("18450000"),
+            unit="currency",
+            currency="INR",
+            lineage=[{"source": "open customer orders", "calculation": "quantity × price"}],
+        ),
+        ImpactMetric(
+            id=demo_id("impact-metric", "taiwan-typhoon:orders-at-risk"),
+            organization_id=org_id,
+            assessment_id=impact_assessment.id,
+            metric_key="customer_orders_at_risk",
+            numeric_value=decimal("14"),
+            unit="orders",
+            lineage=[{"source": "BOM propagation"}],
+        ),
+    )
+    risk_assessment = RiskAssessment(
+        id=demo_id("risk-assessment", "taiwan-typhoon-2026"),
+        organization_id=org_id,
+        incident_id=incident.id,
+        impact_assessment_id=impact_assessment.id,
+        score=decimal("78.4"),
+        band=RiskBand.CRITICAL,
+        model_version="1.0",
+        explanation="High revenue exposure, constrained CPU supply, and fourteen at-risk orders.",
+        calculated_at=SNAPSHOT_AT,
+    )
+    scenario_specs = (
+        (
+            "wait-and-monitor",
+            "Wait and monitor",
+            ScenarioStatus.FEASIBLE,
+            "0",
+            "14",
+            "0",
+            0,
+            "0.95",
+            "0.10",
+        ),
+        (
+            "expedite-existing",
+            "Expedite existing supply",
+            ScenarioStatus.FEASIBLE,
+            "240000",
+            "5",
+            "11200000",
+            9,
+            "0.81",
+            "0.72",
+        ),
+        (
+            "alternate-source",
+            "Activate alternate source",
+            ScenarioStatus.RECOMMENDED,
+            "165000",
+            "7",
+            "15600000",
+            12,
+            "0.74",
+            "0.89",
+        ),
+    )
+    scenarios = tuple(
+        Scenario(
+            id=demo_id("scenario", key),
+            organization_id=org_id,
+            incident_id=incident.id,
+            name=name,
+            description=f"Mitigation option: {name.lower()}.",
+            status=status,
+            incremental_cost=decimal(cost),
+            currency="INR",
+            delay_days=decimal(delay),
+            quantity_protected=decimal("280" if key != "wait-and-monitor" else "0"),
+            orders_protected=orders,
+            revenue_protected=decimal(revenue),
+            expected_service_level=decimal("0.91" if key == "alternate-source" else "0.76"),
+            feasibility_score=decimal(feasibility),
+            objective_score=decimal(objective),
+            assumptions=[{"statement": "Alternate supplier qualification remains valid"}],
+            constraints=[{"name": "approved_budget", "limit": "300000 INR"}],
+        )
+        for (
+            key,
+            name,
+            status,
+            cost,
+            delay,
+            revenue,
+            orders,
+            feasibility,
+            objective,
+        ) in scenario_specs
+    )
+    scenario_by_key = {
+        key: scenario
+        for (key, *_remaining), scenario in zip(scenario_specs, scenarios, strict=True)
+    }
+    scenario_actions = tuple(
+        ScenarioAction(
+            id=demo_id("scenario-action", key),
+            organization_id=org_id,
+            scenario_id=scenario_by_key[key].id,
+            sequence=1,
+            action_type=action_type,
+            parameters=parameters,
+            incremental_cost=scenario_by_key[key].incremental_cost,
+            expected_delay_days=scenario_by_key[key].delay_days,
+            feasibility={"score": str(scenario_by_key[key].feasibility_score)},
+        )
+        for key, action_type, parameters in (
+            ("wait-and-monitor", "MONITOR_SUPPLIER", {"interval_hours": 6}),
+            ("expedite-existing", "EXPEDITE_SHIPMENT", {"mode": "AIR"}),
+            ("alternate-source", "SWITCH_SUPPLIER", {"supplier_code": "HANSEONG"}),
+        )
+    )
+    recommended_scenario = scenario_by_key["alternate-source"]
+    recommendation = Recommendation(
+        id=demo_id("recommendation", "taiwan-typhoon-2026"),
+        organization_id=org_id,
+        incident_id=incident.id,
+        recommended_scenario_id=recommended_scenario.id,
+        confidence=decimal("0.88"),
+        rationale=(
+            "The alternate source protects the most revenue within the approved budget and "
+            "maintains a feasible seven-day recovery window."
+        ),
+        alternative_scenario_ids=[
+            str(item.id) for item in scenarios if item.id != recommended_scenario.id
+        ],
+        assumptions=list(recommended_scenario.assumptions),
+        risks=[
+            {"risk": "Supplier onboarding lead time", "mitigation": "Use existing qualification"}
+        ],
+        structured_summary={
+            "objective": "MAX_REVENUE_PROTECTED",
+            "revenue_protected": "15600000",
+            "incremental_cost": "165000",
+            "expected_delay_days": "7",
+        },
+    )
+    approval_request = ApprovalRequest(
+        id=demo_id("approval-request", "taiwan-typhoon-2026"),
+        organization_id=org_id,
+        recommendation_id=recommendation.id,
+        status=ApprovalStatus.PENDING,
+        requested_by_user_id=user_by_email["manager@nova.example"].id,
+        required_role_key=RoleKey.APPROVER.value,
+        assigned_approver_user_id=user_by_email["approver@nova.example"].id,
+        amount=decimal("165000"),
+        currency="INR",
+        due_at=SNAPSHOT_AT + timedelta(hours=8),
+        policy_snapshot={"maximum_amount": "250000", "required_role": "APPROVER"},
+    )
+    execution_action = ExecutionAction(
+        id=demo_id("execution-action", "taiwan-typhoon:alternate-source"),
+        organization_id=org_id,
+        recommendation_id=recommendation.id,
+        scenario_action_id=next(
+            action.id for action in scenario_actions if action.action_type == "SWITCH_SUPPLIER"
+        ),
+        action_type="SWITCH_SUPPLIER",
+        adapter_key="mock.erp@1.0",
+        idempotency_key="taiwan-typhoon-2026:switch-supplier",
+        status=ExecutionStatus.PENDING,
+        parameters={"supplier_code": "HANSEONG"},
+        attempt_count=0,
+    )
+    audit_entry = AuditLog(
+        id=demo_id("audit-log", "taiwan-typhoon:scenario-generated"),
+        organization_id=org_id,
+        occurred_at=SNAPSHOT_AT,
+        actor_user_id=None,
+        action="scenario.generated",
+        entity_type="incident",
+        entity_id=incident.id,
+        workflow_version_id=workflow_version.id,
+        request_id="seeded-taiwan-typhoon",
+        before=None,
+        after={"scenario_count": 3, "recommended": "alternate-source"},
+        metadata_={"seeded": True},
     )
 
     suppliers = tuple(
@@ -977,13 +1329,31 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
             *users,
             *connectors,
             *signal_sources,
+            workflow_definition,
+            *llm_configurations,
+            *prompt_templates,
             *suppliers,
             *materials,
             *products,
             *facilities,
             *customers,
         ),
-        (*user_roles, *supplier_sites, *supplier_ratings, *material_suppliers, *bills_of_material),
+        (
+            *user_roles,
+            workflow_version,
+            *supplier_sites,
+            *supplier_ratings,
+            *material_suppliers,
+            *bills_of_material,
+        ),
+        (*workflow_stages,),
+        (*workflow_configurations, *workflow_dependencies),
+        (incident,),
+        (impact_assessment, *scenarios),
+        (*impact_metrics, risk_assessment, *scenario_actions),
+        (recommendation,),
+        (approval_request, execution_action),
+        (audit_entry,),
         (
             *bom_components,
             *inventory_snapshots,

@@ -1,6 +1,7 @@
 """Deterministic registry-driven workflow execution engine."""
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from time import perf_counter
@@ -49,6 +50,7 @@ class WorkflowEngine:
         replay_of_run_id: UUID | None = None,
         is_simulation: bool = False,
         simulation_parameters: dict[str, object] | None = None,
+        on_stage_complete: Callable[[StageRun], Awaitable[None]] | None = None,
     ) -> WorkflowExecutionResult:
         version = await self.repository.get_version(version_id)
         if version is None:
@@ -92,7 +94,13 @@ class WorkflowEngine:
         for stage_id in graph.execution_order:
             stage = stages[stage_id]
             config = configurations[stage_id]
-            outcome = await self._execute_stage(run, stage, config, context)
+            outcome = await self._execute_stage(
+                run,
+                stage,
+                config,
+                context,
+                on_stage_complete=on_stage_complete,
+            )
             context.update(outcome.context_updates)
             run.context = dict(context)
             await self.repository.flush()
@@ -122,6 +130,8 @@ class WorkflowEngine:
         stage: StageDefinition,
         config: StageConfiguration,
         context: dict[str, object],
+        *,
+        on_stage_complete: Callable[[StageRun], Awaitable[None]] | None = None,
     ) -> "_StageOutcome":
         stage_run = StageRun(
             organization_id=self.tenant.organization_id,
@@ -156,6 +166,8 @@ class WorkflowEngine:
                 stage_run.completed_at = datetime.now(UTC)
                 stage_run.duration_ms = round((perf_counter() - started) * 1000)
                 await self.repository.flush()
+                if on_stage_complete is not None:
+                    await on_stage_complete(stage_run)
                 return _StageOutcome(
                     status=result.status,
                     context_updates=dict(result.context_updates),
@@ -168,6 +180,8 @@ class WorkflowEngine:
                     stage_run.completed_at = datetime.now(UTC)
                     stage_run.duration_ms = round((perf_counter() - started) * 1000)
                     await self.repository.flush()
+                    if on_stage_complete is not None:
+                        await on_stage_complete(stage_run)
                     return _StageOutcome(status=RunStatus.FAILED)
                 await self.repository.flush()
 

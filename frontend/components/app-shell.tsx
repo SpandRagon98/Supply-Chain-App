@@ -12,6 +12,20 @@ const navigation = [
   { href: "/shipments", label: "Shipments", icon: "shipment" },
 ] as const;
 
+const decisionNavigation = [
+  { href: "/decisions/scenarios", label: "Scenarios", icon: "scenario" },
+  { href: "/decisions/recommendations", label: "Recommendations", icon: "recommendation" },
+  { href: "/approvals", label: "Approvals", icon: "approval" },
+  { href: "/executions", label: "Executions", icon: "execution" },
+] as const;
+
+const controlNavigation = [
+  { href: "/workflows", label: "Workflows", icon: "workflow" },
+  { href: "/simulations", label: "Simulations", icon: "simulation" },
+  { href: "/settings/integrations", label: "Settings", icon: "settings" },
+  { href: "/audit", label: "Audit", icon: "audit" },
+] as const;
+
 export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="app-shell">
@@ -24,7 +38,9 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
           <p className="nav-label">Operations</p>
           {navigation.map((item) => <NavigationLink key={item.href} {...item} />)}
           <p className="nav-label">Decisioning</p>
-          <NavigationLink href="/disruptions" label="Risk & scenarios" icon="risk" />
+          {decisionNavigation.map((item) => <NavigationLink key={item.href} {...item} />)}
+          <p className="nav-label">Control plane</p>
+          {controlNavigation.map((item) => <NavigationLink key={item.href} {...item} />)}
         </nav>
         <div className="sidebar-foot">Nova Electronics<br />Decision workspace</div>
       </aside>

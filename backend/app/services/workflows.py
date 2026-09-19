@@ -100,6 +100,11 @@ class WorkflowService:
             raise WorkflowValidationError(("stage position cannot be negative",))
         if draft.timeout_seconds < 1:
             raise WorkflowValidationError(("stage timeout must be at least one second",))
+        existing_stages = tuple(await self.repository.list_stages(version_id))
+        if any(item.key == draft.key for item in existing_stages):
+            raise WorkflowValidationError((f"stage key '{draft.key}' is already in use",))
+        if any(item.position == draft.position for item in existing_stages):
+            raise WorkflowValidationError((f"stage position '{draft.position}' is already in use",))
         stage = StageDefinition(
             organization_id=self.tenant.organization_id,
             workflow_version_id=version_id,
@@ -133,7 +138,16 @@ class WorkflowService:
     async def set_stage_enabled(self, stage_id: UUID, *, enabled: bool) -> StageDefinition:
         stage = await self._get_stage(stage_id)
         await self._require_draft(stage.workflow_version_id)
+        previous = stage.is_enabled
         stage.is_enabled = enabled
+        try:
+            self.validator.validate(
+                tuple(await self.repository.list_stages(stage.workflow_version_id)),
+                tuple(await self.repository.list_dependencies(stage.workflow_version_id)),
+            )
+        except WorkflowValidationError:
+            stage.is_enabled = previous
+            raise
         await self.repository.flush()
         return stage
 
@@ -188,6 +202,9 @@ class WorkflowService:
             depends_on_stage_id=depends_on_stage_id,
             condition=deepcopy(condition or {}),
         )
+        stages = tuple(await self.repository.list_stages(version_id))
+        dependencies = tuple(await self.repository.list_dependencies(version_id)) + (dependency,)
+        self.validator.validate(stages, dependencies)
         await self.repository.add(dependency)
         return dependency
 

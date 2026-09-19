@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     ai_provider: str = "mock"
     ai_model: str = "gpt-4.1-mini"
     openai_api_key: str | None = None
+    internal_api_token: str | None = None
 
     @property
     def cors_origin_list(self) -> list[str]:

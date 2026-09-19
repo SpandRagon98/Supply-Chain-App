@@ -34,8 +34,10 @@ def entities_of_type[T](entity_type: type[T]) -> tuple[T, ...]:
 def test_demo_dataset_has_stable_comprehensive_counts() -> None:
     dataset = build_demo_dataset()
 
-    assert len(dataset.entities) == 902
+    assert len(dataset.entities) == 944
     assert dataset.counts == {
+        "ApprovalRequest": 1,
+        "AuditLog": 1,
         "BOMComponent": 65,
         "BillOfMaterial": 10,
         "ConsumptionHistory": 120,
@@ -44,24 +46,39 @@ def test_demo_dataset_has_stable_comprehensive_counts() -> None:
         "CustomerOrder": 42,
         "CustomerOrderLine": 84,
         "DistributionCenter": 2,
+        "DisruptionIncident": 1,
+        "ExecutionAction": 1,
         "InventorySnapshot": 176,
+        "ImpactAssessment": 1,
+        "ImpactMetric": 2,
+        "LLMModelConfiguration": 1,
         "Material": 40,
         "MaterialSupplier": 58,
         "Organization": 1,
         "Plant": 3,
+        "PromptTemplate": 1,
         "Product": 10,
         "PurchaseOrder": 30,
         "PurchaseOrderLine": 56,
+        "Recommendation": 1,
+        "RiskAssessment": 1,
         "Role": 7,
         "Shipment": 20,
         "ShipmentEvent": 60,
         "SignalSource": 5,
+        "Scenario": 3,
+        "ScenarioAction": 3,
+        "StageConfiguration": 8,
+        "StageDefinition": 8,
+        "StageDependency": 7,
         "Supplier": 18,
         "SupplierRating": 36,
         "SupplierSite": 19,
         "User": 7,
         "UserRole": 7,
         "Warehouse": 3,
+        "WorkflowDefinition": 1,
+        "WorkflowVersion": 1,
     }
     assert len({entity.id for entity in dataset.entities}) == len(dataset.entities)
     assert [entity.id for entity in dataset.entities] == [

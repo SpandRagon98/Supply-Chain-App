@@ -1,6 +1,7 @@
 """Tenant-scoped, read-only operational views for the frontend command center."""
 
 from decimal import Decimal
+from secrets import compare_digest
 from typing import Annotated
 from uuid import UUID
 
@@ -19,9 +20,12 @@ from app.domain.models import (
     InventorySnapshot,
     Organization,
     RiskAssessment,
+    Role,
     Scenario,
     Shipment,
     Supplier,
+    User,
+    UserRole,
 )
 from app.domain.tenant import TenantContext
 from app.infrastructure.database import get_db_session
@@ -38,6 +42,15 @@ def _envelope(
 
 async def get_tenant_context(request: Request, session: Session) -> TenantContext:
     """Accept explicit development tenancy; production must supply a real identity integration."""
+    settings = get_settings()
+    if settings.is_production:
+        supplied_token = request.headers.get("X-Internal-API-Token")
+        if (
+            not settings.internal_api_token
+            or not supplied_token
+            or not compare_digest(supplied_token, settings.internal_api_token)
+        ):
+            raise HTTPException(status_code=401, detail="Authentication is required in production")
     raw_organization_id = request.headers.get("X-Organization-ID")
     if raw_organization_id:
         try:
@@ -51,15 +64,60 @@ async def get_tenant_context(request: Request, session: Session) -> TenantContex
         )
         if organization is None:
             raise HTTPException(status_code=404, detail="Organization not found")
-        return TenantContext(organization_id=organization_id, user_id=None)
-    if get_settings().is_production:
-        raise HTTPException(status_code=401, detail="Authentication is required in production")
+        tenant = await _actor_context(session, organization_id, request)
+        if settings.is_production and tenant.user_id is None:
+            raise HTTPException(status_code=401, detail="A valid user identity is required")
+        return tenant
+    if settings.is_production:
+        raise HTTPException(status_code=401, detail="A tenant identity is required in production")
     demo_organization_id = await session.scalar(
         select(Organization.id).where(Organization.slug == "nova-electronics")
     )
     if demo_organization_id is None:
         raise HTTPException(status_code=503, detail="Demo organization has not been seeded")
-    return TenantContext(organization_id=demo_organization_id, user_id=None)
+    return await _actor_context(session, demo_organization_id, request)
+
+
+async def _actor_context(
+    session: AsyncSession, organization_id: UUID, request: Request
+) -> TenantContext:
+    raw_user_id = request.headers.get("X-User-ID")
+    try:
+        user_id = UUID(raw_user_id) if raw_user_id else None
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="Invalid X-User-ID header") from error
+    if user_id is None:
+        user_id = await session.scalar(
+            select(User.id).where(
+                User.organization_id == organization_id,
+                User.email == "admin@nova.example",
+            )
+        )
+    if user_id is None:
+        return TenantContext(organization_id=organization_id, user_id=None)
+    valid_user_id = await session.scalar(
+        select(User.id).where(
+            User.organization_id == organization_id,
+            User.id == user_id,
+            User.is_active.is_(True),
+        )
+    )
+    if valid_user_id is None:
+        return TenantContext(organization_id=organization_id, user_id=None)
+    roles = await session.scalars(
+        select(Role.key)
+        .join(UserRole, UserRole.role_id == Role.id)
+        .where(
+            Role.organization_id == organization_id,
+            UserRole.organization_id == organization_id,
+            UserRole.user_id == user_id,
+        )
+    )
+    return TenantContext(
+        organization_id=organization_id,
+        user_id=valid_user_id,
+        roles=frozenset(roles.all()),
+    )
 
 
 Tenant = Annotated[TenantContext, Depends(get_tenant_context)]

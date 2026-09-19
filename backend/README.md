@@ -17,7 +17,7 @@ python -m app.seed
 uvicorn app.main:app --reload
 ```
 
-`python -m app.seed` inserts or refreshes the deterministic 902-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
+`python -m app.seed` inserts or refreshes the deterministic 944-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
 
 Run the worker in a second shell:
 

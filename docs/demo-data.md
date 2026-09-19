@@ -1,6 +1,6 @@
 # Nova Electronics demo data
 
-Phase 3 provides a deterministic, connected dataset for the fictional tenant **Nova Electronics**. It is large enough to exercise procurement, inventory, demand, logistics, multi-level BOM traversal, and later disruption workflows while remaining understandable during a product demonstration.
+The seed provides a deterministic, connected dataset for the fictional tenant **Nova Electronics**. It exercises procurement, inventory, demand, logistics, multi-level BOM traversal, disruption decisions, and workflow execution while remaining understandable during a product demonstration.
 
 ## Seed command
 
@@ -36,13 +36,15 @@ python -m app.seed
 | Shipments and tracking events | 80 |
 | Mock connector configurations | 5 |
 | Signal source configurations | 5 |
-| **Total** | **902** |
+| Workflow, stage, prompt, and AI configurations | 27 |
+| Taiwan typhoon decision and governance records | 15 |
+| **Total** | **944** |
 
 The network includes 18 suppliers across India and Asia, 40 materials, 10 products, 10 versioned BOMs, 8 facilities, 18 customers, 30 purchase orders, 42 customer orders, and 20 shipments.
 
 ## Scenario-ready structure
 
-The dataset intentionally contains evidence and pressure points for later phases without precomputing their conclusions:
+The dataset contains evidence and pressure points plus one lineaged Taiwan typhoon decision journey:
 
 - **Taiwan typhoon:** Formosa Silicon Works has Tainan and Hsinchu sites and is the primary source for the critical `CPU-X9`. Hanseong is an approved alternate with a different lead time and cost.
 - **Port closure:** international shipments travel by ocean and include Singapore tracking events, allowing a closure to affect selected inbound flows.

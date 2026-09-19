@@ -2,7 +2,7 @@
 
 An enterprise decisioning platform that detects supply-chain disruptions, maps them to an organization's network, calculates deterministic business impact, recommends mitigations, routes approvals, executes integration actions, and verifies outcomes.
 
-The application is being delivered in deliberate phases. The backend foundation now provides the API process, worker, database migration framework, structured logging, and operational health checks. Domain capabilities arrive in subsequent backend phases before frontend implementation begins.
+The application includes an end-to-end decision workspace: operational monitoring, deterministic scenario comparison, recommendations, approvals, execution status, a visual workflow builder, tenant settings, audit history, and real workflow simulation.
 
 ## Repository layout
 
@@ -43,7 +43,7 @@ scripts/          Repeatable developer and verification commands
    Invoke-RestMethod http://localhost:8000/api/v1/health/ready
    ```
 
-Interactive API documentation is available at `http://localhost:8000/docs` outside production. The frontend remains intentionally deferred until complete backend validation. See [implementation status](docs/implementation-status.md) for current scope and [backend documentation](docs/backend.md) for service details.
+Interactive API documentation is available at `http://localhost:8000/docs` outside production. See [implementation status](docs/implementation-status.md) for current scope and [backend documentation](docs/backend.md) for service details.
 
 ## Planned developer commands
 
@@ -58,6 +58,7 @@ Interactive API documentation is available at `http://localhost:8000/docs` outsi
 | Run migrations | `docker compose run --rm api alembic upgrade head` |
 | Seed or refresh Nova Electronics demo data | `powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1` |
 | Run frontend | `cd frontend; npm install; npm run dev` |
+| Run frontend E2E journey | `cd frontend; npm run build; npx playwright install chromium; npm run test:e2e` |
 
 ## Design guardrails
 

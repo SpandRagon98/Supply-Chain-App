@@ -56,7 +56,11 @@ async def test_production_tenant_context_never_uses_demo_bypass(
 ) -> None:
     monkeypatch.setattr(
         "app.api.v1.operations.get_settings",
-        lambda: SimpleNamespace(is_production=True, environment=Environment.PRODUCTION),
+        lambda: SimpleNamespace(
+            is_production=True,
+            environment=Environment.PRODUCTION,
+            internal_api_token=None,
+        ),
     )
     with pytest.raises(HTTPException, match="Authentication") as error:
         await get_tenant_context(request_with_headers([]), EmptySession())
