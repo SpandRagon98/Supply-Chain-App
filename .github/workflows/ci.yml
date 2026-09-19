@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    name: Validate repository foundation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository structure
+        run: |
+          test -d backend
+          test -d frontend
+          test -d docs
+          test -d infrastructure
+          test -d scripts
+          test -f README.md
+          test -f .env.example
+          test -f docker-compose.yml
+      - name: Validate Docker Compose
+        run: docker compose --env-file .env.example config --quiet
