@@ -1,5 +1,32 @@
 # Backend
 
-This directory is intentionally reserved in Phase 0. Phase 1 will add the FastAPI modular monolith, settings, SQLAlchemy 2.x persistence, Alembic, Celery, Redis integration, structured logging, and its test suite.
+FastAPI modular-monolith foundation for Supply Chain Disruption Autopilot.
 
-No runtime placeholder has been added so the repository does not imply an API is available before it is implemented.
+## Run locally
+
+From `backend/`:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+Run the worker in a second shell:
+
+```powershell
+celery -A app.worker.celery_app worker --loglevel=INFO
+```
+
+## Quality checks
+
+```powershell
+ruff check .
+ruff format --check .
+mypy app
+pytest
+```
+
+The readiness endpoint checks PostgreSQL and Redis. Liveness deliberately does not, so orchestrators can distinguish a failed process from an unavailable dependency.
