@@ -6,7 +6,8 @@
 | --- | --- | --- | --- |
 | 0 — Repository Foundation | COMPLETE | 2026-09-19 | Monorepo, Compose dependencies, environment template, CI foundation, and verification script |
 | 1 — Backend Foundation | COMPLETE | 2026-09-19 | FastAPI, settings, SQLAlchemy, Alembic, Redis, Celery, logging, errors, health API, and tests validated |
-| 2–13 — Backend capability phases | NOT STARTED | — | — |
+| 2 — Domain Model | COMPLETE | 2026-09-19 | 53 canonical tables, frozen migration, tenant repository/service structure, and isolation tests |
+| 3–13 — Backend capability phases | NOT STARTED | — | — |
 | 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
 
 ## Phase 0 decisions
@@ -36,3 +37,11 @@
 - The frontend remains deferred until complete backend validation.
 - Docker is not installed on the current host, so Compose services could not be started here. Compose validation remains enforced in GitHub Actions.
 - Local tests run on Python 3.14 and expose upstream deprecation warnings from the FastAPI/Starlette test client; CI uses the supported project baseline, Python 3.12.
+
+## Phase 2 record
+
+- **Date:** 2026-09-19
+- **Major files:** domain model modules under `backend/app/domain/models`, tenant context, repository/service foundations, Alembic revision `46e6e8f4af02`, schema tests, `docs/data-model.md`, and ADR-003.
+- **Major decisions:** 53-table canonical schema; one `Facility` table with typed specializations; product-to-product BOM components for multiple levels; JSONB for configurable structures and lineage; explicit tenant context on repositories and services.
+- **Tests executed:** 29 pytest tests with 97% coverage, tenant-scope query compilation, complete table-scope contract, Ruff, strict mypy, Alembic head validation, and complete PostgreSQL upgrade SQL compilation.
+- **Remaining technical debt:** live PostgreSQL migration execution is unavailable on this Docker-less local host; CI performs a PostgreSQL upgrade/schema-drift/downgrade/upgrade round trip on every push and pull request.

@@ -8,13 +8,26 @@ if (-not (Test-Path -LiteralPath $python)) {
     throw 'Backend virtual environment not found. Run: cd backend; python -m venv .venv; .venv/Scripts/python -m pip install -e ".[dev]"'
 }
 
+function Invoke-BackendPython {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+
+    & $python @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Backend command failed: python $($Arguments -join ' ')"
+    }
+}
+
 Push-Location $backendRoot
 try {
-    & $python -m ruff check .
-    & $python -m ruff format --check .
-    & $python -m mypy app
-    & $python -m pytest
-    & $python -m alembic heads
+    Invoke-BackendPython -Arguments @('-m', 'ruff', 'check', '.')
+    Invoke-BackendPython -Arguments @('-m', 'ruff', 'format', '--check', '.')
+    Invoke-BackendPython -Arguments @('-m', 'mypy', 'app')
+    Invoke-BackendPython -Arguments @('-m', 'pytest')
+    Invoke-BackendPython -Arguments @('-m', 'alembic', 'heads')
+    & $python -m alembic upgrade head --sql | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'PostgreSQL offline migration compilation failed.'
+    }
 }
 finally {
     Pop-Location

@@ -9,3 +9,14 @@ class ApplicationError(Exception):
         self.code = code
         self.message = message
         self.status_code = status_code
+
+
+class TenantIsolationError(ApplicationError):
+    """Raised when code attempts to cross the active organization boundary."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            code="tenant_isolation_violation",
+            message="The requested resource is not available in this organization.",
+            status_code=403,
+        )

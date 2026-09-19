@@ -14,6 +14,7 @@ htmlcov/
 .venv/
 venv/
 *.egg-info/
+*.db
 
 # Node / Next.js
 node_modules/

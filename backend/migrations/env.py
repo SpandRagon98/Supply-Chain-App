@@ -8,7 +8,10 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import get_settings
+from app.domain import models as domain_models
 from app.domain.base import Base
+
+_ = domain_models
 
 config = context.config
 if config.config_file_name is not None:

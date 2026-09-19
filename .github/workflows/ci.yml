@@ -30,6 +30,20 @@ jobs:
   backend:
     name: Backend quality gates
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: supply_chain_test
+          POSTGRES_USER: supply_chain
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U supply_chain -d supply_chain_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     defaults:
       run:
         working-directory: backend
@@ -49,4 +63,11 @@ jobs:
       - name: Test
         run: pytest
       - name: Validate migrations
-        run: alembic heads
+        env:
+          DATABASE_URL: postgresql+asyncpg://supply_chain:test-only-password@localhost:5432/supply_chain_test
+        run: |
+          alembic heads
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head

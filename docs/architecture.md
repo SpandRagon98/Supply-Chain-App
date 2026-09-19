@@ -36,3 +36,5 @@ Numerical business claims originate only from structured records and determinist
 - `frontend`: operational UI consuming aggregation and resource APIs.
 
 This layout stays within one backend deployable until real operational needs justify extracting a service.
+
+The canonical persistence model and organization boundary are documented in [data-model.md](data-model.md).
