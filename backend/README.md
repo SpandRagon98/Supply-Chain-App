@@ -13,8 +13,11 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 alembic upgrade head
+python -m app.seed
 uvicorn app.main:app --reload
 ```
+
+`python -m app.seed` inserts or refreshes the deterministic 892-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
 
 Run the worker in a second shell:
 

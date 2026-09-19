@@ -7,7 +7,8 @@
 | 0 — Repository Foundation | COMPLETE | 2026-09-19 | Monorepo, Compose dependencies, environment template, CI foundation, and verification script |
 | 1 — Backend Foundation | COMPLETE | 2026-09-19 | FastAPI, settings, SQLAlchemy, Alembic, Redis, Celery, logging, errors, health API, and tests validated |
 | 2 — Domain Model | COMPLETE | 2026-09-19 | 53 canonical tables, frozen migration, tenant repository/service structure, and isolation tests |
-| 3–13 — Backend capability phases | NOT STARTED | — | — |
+| 3 — Synthetic Demo Data | COMPLETE | 2026-09-19 | Deterministic 892-record Nova Electronics network, idempotent seed command, scenario contracts, and PostgreSQL integration test |
+| 4–13 — Backend capability phases | NOT STARTED | — | — |
 | 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
 
 ## Phase 0 decisions
@@ -45,3 +46,12 @@
 - **Major decisions:** 53-table canonical schema; one `Facility` table with typed specializations; product-to-product BOM components for multiple levels; JSONB for configurable structures and lineage; explicit tenant context on repositories and services.
 - **Tests executed:** 29 pytest tests with 97% coverage, tenant-scope query compilation, complete table-scope contract, Ruff, strict mypy, Alembic head validation, and complete PostgreSQL upgrade SQL compilation.
 - **Remaining technical debt:** live PostgreSQL migration execution is unavailable on this Docker-less local host; CI performs a PostgreSQL upgrade/schema-drift/downgrade/upgrade round trip on every push and pull request.
+
+## Phase 3 record
+
+- **Date:** 2026-09-19
+- **Major files:** `backend/app/seed`, `backend/tests/test_demo_seed.py`, `scripts/seed-demo.ps1`, and `docs/demo-data.md`.
+- **Major decisions:** one fictional Nova Electronics tenant; deterministic UUIDv5 identities and timestamps; one transactional, idempotent seed; realistic connected records rather than disconnected fixtures; multi-level BOMs and explicit scenario pressure points.
+- **Dataset:** 892 records covering RBAC, 18 suppliers, 40 materials, 10 products, 10 BOMs, 8 facilities, 176 inventory snapshots, 30 purchase orders, 42 customer orders, 20 shipments, and supporting lines/events/history.
+- **Tests executed:** exact dataset contract, stable identity and tenant-scope checks, supplier and BOM topology, operational pressure signals, repeat seeding against PostgreSQL in CI, Ruff, strict mypy, and the full backend suite.
+- **Remaining technical debt:** synthetic data is intentionally static and represents one tenant; disruption incidents and derived impact/risk records begin in their dedicated capability phases.

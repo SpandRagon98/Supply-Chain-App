@@ -30,7 +30,13 @@ scripts/          Repeatable developer and verification commands
    docker compose run --rm api alembic upgrade head
    ```
 
-4. Confirm service health:
+4. Load the repeatable Nova Electronics demonstration dataset:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1
+   ```
+
+5. Confirm service health:
 
    ```powershell
    docker compose ps
@@ -50,7 +56,7 @@ Interactive API documentation is available at `http://localhost:8000/docs` outsi
 | Run worker locally | `cd backend; celery -A app.worker.celery_app worker --loglevel=INFO` |
 | Run backend checks | `cd backend; ruff check .; mypy app; pytest` |
 | Run migrations | `docker compose run --rm api alembic upgrade head` |
-| Seed data | Added in Phase 3 |
+| Seed or refresh Nova Electronics demo data | `powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1` |
 | Run frontend | Added in Phase 14 |
 
 ## Design guardrails
@@ -60,6 +66,8 @@ Interactive API documentation is available at `http://localhost:8000/docs` outsi
 - The initial backend is a modular monolith, not a collection of microservices.
 - All tenant-scoped domain data will use organization isolation and RBAC.
 - Workflow definitions and their published versions will be persisted and immutable after publication.
+
+The seeded network and its scenario-ready pressure points are documented in [Nova Electronics demo data](docs/demo-data.md).
 
 ## License
 
