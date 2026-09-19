@@ -18,7 +18,11 @@
 | 11 — Recommendation + approval | COMPLETE | 2026-09-19 | Explainable recommendation, approval policy routing, and decision history |
 | 12 — Execution + verification | COMPLETE | 2026-09-19 | Idempotent mock actions, execution results, and outcome resolution logic |
 | 13 — Complete backend validation | COMPLETE | 2026-09-19 | Offline Taiwan Typhoon chain test from signal through verification |
-| 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
+| 14 — Frontend foundation | COMPLETE | 2026-09-19 | Next.js / TypeScript foundation, theme tokens, responsive layout primitives, container build |
+| 15 — App shell | COMPLETE | 2026-09-19 | Responsive sidebar, top bar, navigation, search affordance, and workspace shell |
+| 16 — Command center dashboard | COMPLETE | 2026-09-19 | API-health-aware command center with non-fabricated KPI states |
+| 17 — Operational screens | COMPLETE | 2026-09-19 | Disruptions, network, suppliers, inventory, shipments, and incident-detail screens |
+| 18–25 — Decision screens, workflow UX, simulation, deployment, quality | NOT STARTED | — | — |
 
 ## Phase 0 decisions
 
@@ -99,3 +103,11 @@
 - **Taiwan Typhoon validation:** a mock Taiwan weather signal resolves to Formosa's supplier site, traces its material dependencies through the Nova BOM, calculates exposure, scores risk, selects an alternative source with OR-Tools, produces a recommendation, routes approval, executes a mock action, and verifies the predicted protected revenue.
 - **Tests executed:** phase-focused unit tests, strict Ruff and mypy checks, and the complete backend suite. PostgreSQL persistence integration remains exercised in CI where `TEST_DATABASE_URL` is available.
 - **Remaining technical debt:** full authenticated, paginated operational APIs and workflow-stage bindings are the next backend expansion; external production adapters, job scheduling, and a live outcome monitor remain intentionally out of scope before the frontend phases.
+
+## Phases 14–17 record
+
+- **Date:** 2026-09-19
+- **Major files:** `frontend/app`, `frontend/components`, `frontend/lib`, `frontend/Dockerfile`, `frontend/package.json`, `docker-compose.production.yml`, `.github/workflows/deploy.yml`, and `docs/deployment.md`.
+- **Major decisions:** original light enterprise design tokens are defined once in global CSS; dashboard, supplier, inventory, shipment, and incident screens consume tenant-scoped read APIs; screens retain explicit unavailable states when an API or tenant data is unreachable, rather than fabricating business values.
+- **Deployment:** CI runs frontend type checking and production builds. `deploy.yml` publishes immutable backend and frontend images to GHCR and supports a protected, manually triggered Docker Compose deployment using GitHub environment secrets.
+- **Tests executed:** TypeScript no-emit type check, production Next build, dependency audit with no reported vulnerabilities, and full backend quality suite. Local Docker Compose runtime validation is blocked because Docker is not installed on this host; CI retains Compose validation.
