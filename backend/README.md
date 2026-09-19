@@ -17,7 +17,7 @@ python -m app.seed
 uvicorn app.main:app --reload
 ```
 
-`python -m app.seed` inserts or refreshes the deterministic 897-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
+`python -m app.seed` inserts or refreshes the deterministic 902-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
 
 Run the worker in a second shell:
 
@@ -41,3 +41,5 @@ Repository and service code must receive an explicit `TenantContext`. Use `Tenan
 Workflow code is split across `app.workflows` (contracts, registry, validation, execution), `app.services.workflows` (draft/publish/clone lifecycle), and `app.repositories.workflows` (tenant-scoped persistence). Published workflow versions cannot be changed in place.
 
 Connector code is split across `app.connectors` (adapter contracts, mock sources, registry), `app.services.connectors` (checkpointed execution and lineage), and `app.repositories.connectors` (tenant-scoped configurations and run telemetry).
+
+Signal intelligence is implemented in `app.intelligence` with orchestration in `app.services.signal_intelligence`. Raw connector values remain preserved while normalization, matching, confidence review, deduplication, and incident transitions remain deterministic.

@@ -35,7 +35,8 @@ python -m app.seed
 | Customers, orders, and lines | 144 |
 | Shipments and tracking events | 80 |
 | Mock connector configurations | 5 |
-| **Total** | **897** |
+| Signal source configurations | 5 |
+| **Total** | **902** |
 
 The network includes 18 suppliers across India and Asia, 40 materials, 10 products, 10 versioned BOMs, 8 facilities, 18 customers, 30 purchase orders, 42 customer orders, and 20 shipments.
 

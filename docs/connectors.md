@@ -27,7 +27,7 @@ flowchart LR
 - `ConnectorBatch` rejects duplicate external IDs and carries the next checkpoint plus batch metadata.
 - `ConnectorRegistry` selects an exact adapter key and implementation version; duplicate registration is rejected.
 
-The framework deliberately separates transport from normalization. Phase 5 proves source retrieval and telemetry. Phase 6 sinks will normalize signal records, resolve entities, and persist canonical `ExternalSignal` and incident data without coupling those rules to provider clients.
+The framework deliberately separates transport from normalization. Phase 5 proves source retrieval and telemetry. The Phase 6 signal sink normalizes supported records, resolves entities, and persists canonical `ExternalSignal` and incident data without coupling those rules to provider clients.
 
 ## Lineage and safety
 

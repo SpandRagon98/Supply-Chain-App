@@ -110,6 +110,7 @@ class MockWeatherAdapter:
                     {
                         "event": "EXTREME_WIND",
                         "severity": "HIGH",
+                        "country_code": "TW",
                         "latitude": 22.9997,
                         "longitude": 120.227,
                         "wind_kph": 168,

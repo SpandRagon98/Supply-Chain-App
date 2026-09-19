@@ -33,6 +33,7 @@ from app.domain.models import (
     Role,
     Shipment,
     ShipmentEvent,
+    SignalSource,
     Supplier,
     SupplierRating,
     SupplierSite,
@@ -447,9 +448,34 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
             connector_type=connector_type,
             adapter=adapter,
             status=ConnectorStatus.MOCK_MODE,
-            configuration={"mode": "mock", "batch_size": 100},
+            configuration={
+                "mode": "mock",
+                "batch_size": 100,
+                "signal_source_key": key,
+            },
         )
         for key, name, connector_type, adapter in connector_specs
+    )
+    signal_source_configuration: dict[str, object] = {
+        "minimum_signal_confidence": 0.2,
+        "auto_incident_confidence": 0.7,
+        "entity_match_threshold": 0.65,
+        "entity_review_threshold": 0.85,
+        "incident_dedup_hours": 72,
+        "capacity_utilization_threshold": 0.9,
+        "inventory_on_hand_threshold": 250,
+    }
+    signal_sources = tuple(
+        SignalSource(
+            id=demo_id("signal-source", key),
+            organization_id=org_id,
+            key=key,
+            name=name,
+            source_type=connector_type,
+            is_active=True,
+            configuration=dict(signal_source_configuration),
+        )
+        for key, name, connector_type, _adapter in connector_specs
     )
 
     suppliers = tuple(
@@ -950,6 +976,7 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
             *roles,
             *users,
             *connectors,
+            *signal_sources,
             *suppliers,
             *materials,
             *products,

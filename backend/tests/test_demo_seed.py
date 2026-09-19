@@ -34,7 +34,7 @@ def entities_of_type[T](entity_type: type[T]) -> tuple[T, ...]:
 def test_demo_dataset_has_stable_comprehensive_counts() -> None:
     dataset = build_demo_dataset()
 
-    assert len(dataset.entities) == 897
+    assert len(dataset.entities) == 902
     assert dataset.counts == {
         "BOMComponent": 65,
         "BillOfMaterial": 10,
@@ -55,6 +55,7 @@ def test_demo_dataset_has_stable_comprehensive_counts() -> None:
         "Role": 7,
         "Shipment": 20,
         "ShipmentEvent": 60,
+        "SignalSource": 5,
         "Supplier": 18,
         "SupplierRating": 36,
         "SupplierSite": 19,

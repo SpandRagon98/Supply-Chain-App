@@ -20,6 +20,7 @@ flowchart LR
 - `app.connectors`: versioned adapter contracts, source records, mock providers, and registry.
 - `app.domain`: SQLAlchemy base and, from Phase 2 onward, domain entities and deterministic services.
 - `app.infrastructure`: database sessions, Redis, health checks, and later external adapters.
+- `app.intelligence`: normalization, detection, entity resolution, and incident policies.
 - `app.workflows`: stage contracts, versioned handler registry, DAG validation, and execution.
 - `app.worker`: Celery application and safety defaults.
 
@@ -28,6 +29,8 @@ HTTP controllers will translate requests and delegate work; they will not contai
 Workflow authoring and execution use explicit tenant-scoped repositories and services. Published versions are immutable, and only registered, validated stage graphs can execute. See [workflow engine](workflow-engine.md) for the lifecycle and failure semantics.
 
 Connector execution uses the last successful checkpoint and persists record counts, content hashes, source URIs, and bounded failures. Raw provider data crosses a `ConnectorSink` boundary before canonical persistence. See [connector framework](connectors.md).
+
+Signal ingestion preserves raw and normalized payloads separately, uses deterministic rules for classification and matching, and gates low-confidence incidents for review. See [signal and incident intelligence](signal-intelligence.md).
 
 ## Operational endpoints
 

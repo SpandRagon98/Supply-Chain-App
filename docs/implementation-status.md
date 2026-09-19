@@ -10,7 +10,8 @@
 | 3 — Synthetic Demo Data | COMPLETE | 2026-09-19 | Deterministic 892-record Nova Electronics network, idempotent seed command, scenario contracts, and PostgreSQL integration test |
 | 4 — Workflow Engine | COMPLETE | 2026-09-19 | Version lifecycle, immutable publication, deep cloning, DAG validation, stage registry/contracts, durable execution, retries, and failure policies |
 | 5 — Connector Framework | COMPLETE | 2026-09-19 | Versioned adapters, ERP/weather/news/shipment/supplier mocks, checkpointed runs, canonical sink boundary, and source lineage |
-| 6–13 — Backend capability phases | NOT STARTED | — | — |
+| 6 — Signal + Incident Intelligence | COMPLETE | 2026-09-19 | Raw-preserving normalization, deterministic detection, entity resolution, confidence review, incident deduplication, and guarded lifecycle |
+| 7–13 — Backend capability phases | NOT STARTED | — | — |
 | 14–25 — Frontend, E2E, deployment, quality phases | NOT STARTED | — | — |
 
 ## Phase 0 decisions
@@ -74,3 +75,12 @@
 - **Mock coverage:** ERP inventory/POs, Taiwan weather, Singapore port news, shipment delays, supplier shutdown/capacity, and a deliberately low-confidence rumor. Five mock connector configurations extend the Nova dataset from 892 to 897 records.
 - **Tests executed:** deterministic payload hashing, record/batch validation, adapter registry behavior, all five mock feeds, checkpoint advancement, lineage content, durable failures, unavailable configuration, tenant enforcement, Nova seed contracts, PostgreSQL connector-run persistence, Ruff, strict mypy, and the complete backend suite.
 - **Remaining technical debt:** production HTTP clients, credential resolution, scheduling, rate limits, provider pagination, and canonical signal sinks arrive with real integration work. Phase 6 implements normalization and signal/incident persistence using this sink boundary.
+
+## Phase 6 record
+
+- **Date:** 2026-09-19
+- **Major files:** `backend/app/intelligence`, `backend/app/services/signal_intelligence.py`, `backend/app/repositories/signals.py`, `backend/tests/test_signal_intelligence.py`, and `docs/signal-intelligence.md`.
+- **Major decisions:** preserve raw and normalized payloads separately; keep detection and matching deterministic; configure thresholds per signal source; group signals using category/location/relevant-entity identities; never auto-clear a review gate merely because later corroboration raises confidence.
+- **Demo behavior:** the five mock feeds yield 10 canonical signals grouped into 5 incidents; two Taiwan weather records group together, four Singapore port records group together, and the low-confidence Kyoto rumor is review-gated. Five seeded signal sources extend Nova from 897 to 902 records.
+- **Tests executed:** country/unit/identifier normalization, threshold validation, detection/filtering, exact/fuzzy/multi-match resolution, low-confidence review, idempotent replay, weather and port deduplication, lifecycle guards, tenant enforcement, PostgreSQL full mock ingestion, Ruff, strict mypy, and the complete backend suite.
+- **Remaining technical debt:** review assignment APIs, manual entity-match correction, location master data/ports, richer currency and unit conversion, and provider-specific normalization rules remain future work. Phase 7 consumes resolved incidents for graph traversal and impact calculations.
