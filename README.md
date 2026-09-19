@@ -4,6 +4,8 @@ An enterprise decisioning platform that detects supply-chain disruptions, maps t
 
 The application includes an end-to-end decision workspace: operational monitoring, deterministic scenario comparison, recommendations, approvals, execution status, a visual workflow builder, tenant settings, audit history, and real workflow simulation.
 
+A no-server, sample-data demonstration is published through GitHub Pages at [spandragon98.github.io/Supply-Chain-App](https://spandragon98.github.io/Supply-Chain-App/). This static edition previews the product interface; persistent data and backend execution require the container deployment.
+
 ## Repository layout
 
 ```text

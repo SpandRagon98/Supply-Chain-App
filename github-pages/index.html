@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#143d2b" />
+    <meta name="description" content="Static demonstration of the Supply Chain Disruption Autopilot." />
+    <title>Supply Chain Autopilot — Static Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="demo-banner">
+      <span class="demo-dot" aria-hidden="true"></span>
+      <strong>GitHub Pages demo</strong>
+      <span>Sample Nova Electronics data · changes reset when the page reloads</span>
+    </div>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#command-center" aria-label="Supply Chain Autopilot home">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span><strong>Autopilot</strong><small>Decision workspace</small></span>
+        </a>
+        <nav id="navigation" aria-label="Primary navigation"></nav>
+        <div class="sidebar-foot">
+          <span class="status-light" aria-hidden="true"></span>
+          <span><strong>Nova Electronics</strong><small>Static demonstration</small></span>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar">
+          <label class="search">
+            <span aria-hidden="true">⌕</span>
+            <input id="search" type="search" placeholder="Search this screen…" autocomplete="off" />
+          </label>
+          <div class="top-actions">
+            <button class="icon-button" id="reset-demo" title="Reset demo state" aria-label="Reset demo state">↻</button>
+            <span class="operator">Operations team</span>
+            <span class="avatar">NE</span>
+          </div>
+        </header>
+        <main class="content" id="content" tabindex="-1"></main>
+      </div>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -4,6 +4,12 @@ The `Build and deploy` GitHub Actions workflow in `.github/workflows/deploy.yml`
 
 Image publication is a release artifact, not a public website. A live URL exists only after the remote deployment job has a reachable Docker host, the required GitHub environment secrets, and DNS/TLS routing to the frontend service.
 
+## GitHub Pages demonstration
+
+The repository also publishes `github-pages/` as a static, interactive demonstration at `https://spandragon98.github.io/Supply-Chain-App/`. The dedicated `pages.yml` workflow uses GitHub's official Pages artifact and deployment actions. GitHub Pages must be enabled once under **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+This edition uses bundled Nova Electronics sample data. Approval and simulation interactions are browser-local and reset on reload. GitHub Pages cannot run the FastAPI service, PostgreSQL, Redis, Celery workers, authenticated mutations, or durable workflow execution; those remain available only through the Docker deployment below.
+
 ## One-time host setup
 
 1. Install Docker Engine with the Compose plugin.
