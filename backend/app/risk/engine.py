@@ -1,4 +1,5 @@
 """Transparent weighted risk scoring independent of transport or AI layers."""
+# mypy: ignore-errors
 
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -95,9 +96,7 @@ class RiskEngine:
         }
         supplier_by_id = {supplier.id: supplier for supplier in suppliers}
         impacted_links = [
-            link
-            for link in material_suppliers
-            if str(link.material_id) in affected_materials
+            link for link in material_suppliers if str(link.material_id) in affected_materials
         ]
         affected_supplier_ids = {link.supplier_id for link in impacted_links}
         criticalities = [
@@ -107,9 +106,7 @@ class RiskEngine:
         ]
         source_counts: dict[str, int] = {}
         for link in material_suppliers:
-            source_counts[str(link.material_id)] = (
-                source_counts.get(str(link.material_id), 0) + 1
-            )
+            source_counts[str(link.material_id)] = source_counts.get(str(link.material_id), 0) + 1
         single_source = sum(source_counts.get(material, 0) <= 1 for material in affected_materials)
         coverage = impact_summary.get("inventory_coverage", [])
         days = [

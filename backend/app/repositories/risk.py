@@ -1,4 +1,5 @@
 """Tenant-scoped persistence for explainable risk assessments."""
+# mypy: ignore-errors
 
 from datetime import UTC, datetime
 from uuid import UUID

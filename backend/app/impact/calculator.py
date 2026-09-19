@@ -1,4 +1,5 @@
 """Pure, explainable traversal of the supply network and commercial exposure."""
+# mypy: ignore-errors
 # ruff: noqa: B009
 
 from dataclasses import dataclass

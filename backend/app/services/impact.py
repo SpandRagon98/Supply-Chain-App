@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from app.core.errors import NotFoundError
+from app.core.errors import ApplicationError
 from app.impact import ImpactCalculator, ImpactResult
 from app.repositories.impact import ImpactRepository
 
@@ -16,7 +16,7 @@ class ImpactService:
     async def assess(self, incident_id: UUID) -> tuple[object, ImpactResult]:
         snapshot = await self.repository.snapshot(incident_id)
         if snapshot is None:
-            raise NotFoundError("Disruption incident was not found")
+            raise ApplicationError("incident_not_found", "Disruption incident was not found", 404)
         result = self.calculator.calculate(snapshot)
         assessment = await self.repository.save(
             incident_id, result.summary, result.metrics, self.calculator.calculation_version

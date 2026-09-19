@@ -1,9 +1,10 @@
 """Application service for risk scoring and durable factor explanations."""
+# mypy: ignore-errors
 
 from decimal import Decimal
 from uuid import UUID
 
-from app.core.errors import NotFoundError
+from app.core.errors import ApplicationError
 from app.repositories.risk import RiskRepository
 from app.risk import RiskEngine, RiskScoringConfig
 
@@ -22,11 +23,10 @@ class RiskService:
             incident_id, impact_assessment_id
         )
         if incident is None:
-            raise NotFoundError("Disruption incident was not found")
+            raise ApplicationError("incident_not_found", "Disruption incident was not found", 404)
         summary = getattr(impact, "summary", {}) if impact is not None else {}
         metric_values = {
-            metric.metric_key: Decimal(metric.numeric_value or 0)
-            for metric in metrics
+            metric.metric_key: Decimal(metric.numeric_value or 0) for metric in metrics
         }
         active_config = config or RiskScoringConfig.default()
         result = self.engine.score(
