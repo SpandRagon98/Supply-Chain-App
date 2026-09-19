@@ -28,7 +28,8 @@
 | 21 — Settings, integrations, audit | COMPLETE | 2026-09-19 | Connector, AI, risk, optimization, and filtered audit APIs and screens |
 | 22 — Simulation | COMPLETE | 2026-09-19 | Published workflows execute through the durable backend engine with persisted stage progress |
 | 23 — Full E2E testing | COMPLETE | 2026-09-19 | Desktop/mobile Playwright decision-to-execution journey and viewport checks |
-| 24 — Deployment | COMPLETE | 2026-09-19 | GHCR Actions release, migrations, PostgreSQL, Redis, health gates, server-only authentication, and runbook |
+| 24 — Deployment | COMPLETE | 2026-09-19 | GHCR Actions release pipeline, remote-host deployment job, migrations, PostgreSQL, Redis, health gates, server-only authentication, and runbook |
+| 25 — Architecture and quality review | COMPLETE | 2026-09-19 | RBAC/audit closure, dependency and debug cleanup, frontend lint gate, full backend/frontend verification, and documented limitations |
 
 ## Phase 0 decisions
 
@@ -125,3 +126,10 @@
 - **Demo expansion:** the idempotent Nova seed now includes a published eight-stage disruption workflow, AI explanation configuration, a lineaged Taiwan typhoon incident, three quantified scenarios, a recommendation, approval request, execution command, and audit event.
 - **Tests executed:** Ruff, strict mypy, 78 backend tests (4 environment-gated skips), TypeScript, production Next build, and six Playwright desktop/mobile journey, responsive-layout, API-failure, and empty-state tests.
 - **Remaining technical debt:** replace the deployment's fixed tenant/user identity with an enterprise OIDC session provider before multi-user production rollout; add provider-specific live connector credentials and monitoring; exercise container startup on a Docker-capable host or CI runner.
+
+## Phase 25 record
+
+- **Date:** 2026-09-19
+- **Review outcomes:** all workflow-editing and simulation mutations now enforce explicit tenant roles; workflow, stage, dependency, publication, cloning, approval, and simulation changes emit request-correlated audit records; temporary browser error logging was removed; four unused frontend packages were removed; and Next.js-aware ESLint was added as a required quality gate.
+- **Tests executed:** Ruff format and lint, strict mypy across 81 backend modules, 80 backend tests with four PostgreSQL-gated skips and 80.04% branch-aware coverage, frontend ESLint, TypeScript no-emit checking, production Next.js build across 17 routes, dependency audit with zero reported vulnerabilities, and six Playwright tests across desktop and mobile Chromium.
+- **Known limitations:** the public website is not live until an external Docker host, DNS/TLS endpoint, and GitHub production secrets are supplied; the production identity bridge represents one configured tenant/user and must be replaced with OIDC for multi-user rollout; provider connectors remain deterministic mocks until provider credentials and rate-limit policies are configured; streaming simulation runs in the API request rather than as a resumable worker job; and local container startup was not exercised because this workstation has no Docker engine (the GitHub workflow builds both production images).

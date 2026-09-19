@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas import ResponseEnvelope, ResponseMeta
 from app.api.v1.operations import Tenant, _limit
-from app.domain.enums import ApprovalStatus, FailurePolicy
+from app.domain.enums import ApprovalStatus, FailurePolicy, RoleKey
 from app.domain.models import (
     ApprovalRequest,
     AuditLog,
@@ -33,6 +33,7 @@ from app.domain.models import (
     WorkflowRun,
     WorkflowVersion,
 )
+from app.domain.tenant import TenantContext
 from app.infrastructure.database import get_db_session
 from app.repositories.workflows import WorkflowRepository
 from app.services.recommendations import ApprovalService
@@ -50,6 +51,40 @@ def default_retry_policy() -> dict[str, object]:
 
 def envelope(request: Request, data: object) -> ResponseEnvelope[object]:
     return ResponseEnvelope(data=data, meta=ResponseMeta(request_id=request.state.request_id))
+
+
+def require_roles(tenant: TenantContext, *roles: RoleKey) -> None:
+    if tenant.user_id is None or not tenant.has_role(*roles):
+        raise HTTPException(status_code=403, detail="The actor is not authorized for this action")
+
+
+def record_audit(
+    session: AsyncSession,
+    request: Request,
+    tenant: TenantContext,
+    *,
+    action: str,
+    entity_type: str,
+    entity_id: UUID,
+    before: dict[str, object] | None = None,
+    after: dict[str, object] | None = None,
+    workflow_version_id: UUID | None = None,
+) -> None:
+    session.add(
+        AuditLog(
+            organization_id=tenant.organization_id,
+            occurred_at=datetime.now(UTC),
+            actor_user_id=tenant.user_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            workflow_version_id=workflow_version_id,
+            request_id=request.state.request_id,
+            before=before,
+            after=after,
+            metadata_={},
+        )
+    )
 
 
 class ApprovalDecisionInput(BaseModel):
@@ -255,19 +290,15 @@ async def decide_approval(
         raise HTTPException(status_code=403, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    session.add(
-        AuditLog(
-            organization_id=tenant.organization_id,
-            occurred_at=datetime.now(UTC),
-            actor_user_id=tenant.user_id,
-            action="approval.decided",
-            entity_type="approval_request",
-            entity_id=approval.id,
-            request_id=request.state.request_id,
-            before={"status": "PENDING"},
-            after={"status": payload.decision, "comment": payload.comment},
-            metadata_={},
-        )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="approval.decided",
+        entity_type="approval_request",
+        entity_id=approval.id,
+        before={"status": "PENDING"},
+        after={"status": payload.decision, "comment": payload.comment},
     )
     return envelope(request, {"id": str(result.id), "status": approval.status.value})
 
@@ -371,11 +402,22 @@ async def workflows(request: Request, session: Session, tenant: Tenant) -> Respo
 async def create_workflow(
     request: Request, payload: WorkflowInput, session: Session, tenant: Tenant
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     draft = await workflow_service(session, tenant).create_workflow(
         key=payload.key,
         name=payload.name,
         description=payload.description,
         change_summary="Initial draft",
+    )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.created",
+        entity_type="workflow_definition",
+        entity_id=draft.definition.id,
+        after={"key": draft.definition.key, "name": draft.definition.name},
+        workflow_version_id=draft.version.id,
     )
     return envelope(
         request, {"id": str(draft.definition.id), "version": serialize_version(draft.version)}
@@ -451,6 +493,7 @@ async def add_stage(
     session: Session,
     tenant: Tenant,
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     if payload.handler not in BUILT_IN_STAGE_HANDLERS:
         raise HTTPException(status_code=422, detail="The selected stage handler is unavailable")
     stage = await workflow_service(session, tenant).add_stage(
@@ -467,6 +510,16 @@ async def add_stage(
             retry_policy={"max_attempts": 1},
         ),
     )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.stage_added",
+        entity_type="stage_definition",
+        entity_id=stage.id,
+        after={"key": stage.key, "handler": stage.handler},
+        workflow_version_id=version_id,
+    )
     return envelope(request, {"id": str(stage.id), "key": stage.key})
 
 
@@ -478,8 +531,22 @@ async def set_stage_enabled(
     session: Session,
     tenant: Tenant,
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
+    existing = await WorkflowRepository(session, tenant).get_stage(stage_id)
+    previous_enabled = existing.is_enabled if existing else None
     stage = await workflow_service(session, tenant).set_stage_enabled(
         stage_id, enabled=payload.enabled
+    )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.stage_state_changed",
+        entity_type="stage_definition",
+        entity_id=stage.id,
+        before={"is_enabled": previous_enabled},
+        after={"is_enabled": stage.is_enabled},
+        workflow_version_id=stage.workflow_version_id,
     )
     return envelope(request, {"id": str(stage.id), "is_enabled": stage.is_enabled})
 
@@ -492,12 +559,28 @@ async def update_stage_configuration(
     session: Session,
     tenant: Tenant,
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
+    repository = WorkflowRepository(session, tenant)
+    existing = await repository.get_configuration(stage_id)
+    previous_configuration = dict(existing.configuration) if existing else None
     config = await workflow_service(session, tenant).update_configuration(
         stage_id,
         configuration=payload.configuration,
         retry_policy=payload.retry_policy,
         timeout_seconds=payload.timeout_seconds,
         failure_policy=payload.failure_policy,
+    )
+    stage = await repository.get_stage(stage_id)
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.stage_configured",
+        entity_type="stage_configuration",
+        entity_id=config.id,
+        before={"configuration": previous_configuration},
+        after={"configuration": dict(config.configuration)},
+        workflow_version_id=stage.workflow_version_id if stage else None,
     )
     return envelope(request, {"id": str(config.id), "configuration": config.configuration})
 
@@ -512,10 +595,24 @@ async def add_dependency(
     session: Session,
     tenant: Tenant,
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     dependency = await workflow_service(session, tenant).add_dependency(
         version_id,
         stage_id=payload.stage_id,
         depends_on_stage_id=payload.depends_on_stage_id,
+    )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.dependency_added",
+        entity_type="stage_dependency",
+        entity_id=dependency.id,
+        after={
+            "stage_id": str(dependency.stage_definition_id),
+            "depends_on_stage_id": str(dependency.depends_on_stage_id),
+        },
+        workflow_version_id=version_id,
     )
     return envelope(request, {"id": str(dependency.id)})
 
@@ -524,6 +621,7 @@ async def add_dependency(
 async def validate_workflow(
     request: Request, version_id: UUID, session: Session, tenant: Tenant
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     graph = await workflow_service(session, tenant).validate_version(version_id)
     return envelope(
         request, {"valid": True, "execution_order": [str(item) for item in graph.execution_order]}
@@ -534,7 +632,19 @@ async def validate_workflow(
 async def publish_workflow(
     request: Request, version_id: UUID, session: Session, tenant: Tenant
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     version = await workflow_service(session, tenant).publish_version(version_id)
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.published",
+        entity_type="workflow_version",
+        entity_id=version.id,
+        before={"status": "DRAFT"},
+        after={"status": version.status.value},
+        workflow_version_id=version.id,
+    )
     return envelope(request, serialize_version(version))
 
 
@@ -542,8 +652,19 @@ async def publish_workflow(
 async def clone_workflow(
     request: Request, version_id: UUID, session: Session, tenant: Tenant
 ) -> ResponseEnvelope[object]:
+    require_roles(tenant, RoleKey.ADMIN, RoleKey.SUPPLY_CHAIN_MANAGER)
     version = await workflow_service(session, tenant).clone_version(
         version_id, change_summary="Draft cloned from published version"
+    )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="workflow.cloned",
+        entity_type="workflow_version",
+        entity_id=version.id,
+        after={"status": version.status.value, "cloned_from": str(version_id)},
+        workflow_version_id=version.id,
     )
     return envelope(request, serialize_version(version))
 
@@ -715,6 +836,13 @@ async def simulations(
 async def run_simulation(
     request: Request, payload: SimulationInput, session: Session, tenant: Tenant
 ) -> ResponseEnvelope[object]:
+    require_roles(
+        tenant,
+        RoleKey.ADMIN,
+        RoleKey.SUPPLY_CHAIN_MANAGER,
+        RoleKey.SUPPLY_CHAIN_PLANNER,
+        RoleKey.ANALYST,
+    )
     repository = WorkflowRepository(session, tenant)
     service = WorkflowService(repository, tenant, create_stage_registry())
     engine = WorkflowEngine(repository, service, create_stage_registry(), tenant)
@@ -725,6 +853,16 @@ async def run_simulation(
         is_simulation=True,
         simulation_parameters=payload.parameters,
     )
+    record_audit(
+        session,
+        request,
+        tenant,
+        action="simulation.executed",
+        entity_type="workflow_run",
+        entity_id=result.run_id,
+        after={"status": result.status.value},
+        workflow_version_id=payload.workflow_version_id,
+    )
     return envelope(
         request,
         {"run_id": str(result.run_id), "status": result.status.value, "context": result.context},
@@ -733,10 +871,17 @@ async def run_simulation(
 
 @router.post("/simulations/stream")
 async def stream_simulation(
-    payload: SimulationInput, session: Session, tenant: Tenant
+    request: Request, payload: SimulationInput, session: Session, tenant: Tenant
 ) -> StreamingResponse:
     """Stream NDJSON stage completion events while the real engine executes."""
 
+    require_roles(
+        tenant,
+        RoleKey.ADMIN,
+        RoleKey.SUPPLY_CHAIN_MANAGER,
+        RoleKey.SUPPLY_CHAIN_PLANNER,
+        RoleKey.ANALYST,
+    )
     repository = WorkflowRepository(session, tenant)
     registry = create_stage_registry()
     service = WorkflowService(repository, tenant, registry)
@@ -767,6 +912,16 @@ async def stream_simulation(
                 is_simulation=True,
                 simulation_parameters=payload.parameters,
                 on_stage_complete=stage_completed,
+            )
+            record_audit(
+                session,
+                request,
+                tenant,
+                action="simulation.executed",
+                entity_type="workflow_run",
+                entity_id=result.run_id,
+                after={"status": result.status.value},
+                workflow_version_id=payload.workflow_version_id,
             )
             await queue.put(
                 {

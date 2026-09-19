@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Bell, Search, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 import { NavigationLink } from "./navigation-link";
 
@@ -30,10 +31,10 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           <span className="brand-mark"><Sparkles size={17} /></span>
           <span>Autopilot</span>
-        </a>
+        </Link>
         <nav aria-label="Primary navigation">
           <p className="nav-label">Operations</p>
           {navigation.map((item) => <NavigationLink key={item.href} {...item} />)}

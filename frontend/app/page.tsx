@@ -1,4 +1,5 @@
 import { Activity, ArrowUpRight, CircleCheck, ShieldAlert } from "lucide-react";
+import Link from "next/link";
 
 import { DataUnavailable } from "../components/data-unavailable";
 import { PageHeader } from "../components/page-header";
@@ -20,7 +21,7 @@ export default async function CommandCenter() {
     </section>
     <section className="dashboard-grid">
       <article className="card panel"><div className="screen-toolbar"><div><h2>Decision readiness</h2><p>Connected to the tenant-scoped dashboard aggregation endpoint.</p></div><Activity color="var(--primary)" /></div>{overview ? <p>{overview.suppliers} suppliers and {overview.orders} customer orders are available for operational analysis.</p> : <DataUnavailable title="Decision data is unavailable" description="The frontend deliberately does not substitute placeholder business values when the backend cannot be reached." />}</article>
-      <article className="card panel"><h2>Platform health</h2><p><CircleCheck size={16} color="var(--primary)" /> Backend foundation is {connected ? "available" : "unavailable"}.</p><p><ShieldAlert size={16} color="var(--high)" /> Operational APIs will be exposed with tenant-aware authentication before data becomes visible here.</p><a className="button" href="/disruptions">Open disruptions <ArrowUpRight size={15} /></a></article>
+      <article className="card panel"><h2>Platform health</h2><p><CircleCheck size={16} color="var(--primary)" /> Backend foundation is {connected ? "available" : "unavailable"}.</p><p><ShieldAlert size={16} color="var(--high)" /> Operational APIs will be exposed with tenant-aware authentication before data becomes visible here.</p><Link className="button" href="/disruptions">Open disruptions <ArrowUpRight size={15} /></Link></article>
     </section>
   </>;
 }

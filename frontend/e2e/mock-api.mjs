@@ -20,8 +20,7 @@ function dataFor(path, method) {
 }
 
 createServer((request, response) => {
-  let body = "";
-  request.on("data", (chunk) => { body += chunk; });
+  request.on("data", () => {});
   request.on("end", () => {
     const path = new URL(request.url, "http://127.0.0.1").pathname;
     if (path === "/api/v1/simulations/stream") {

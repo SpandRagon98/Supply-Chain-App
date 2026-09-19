@@ -2,6 +2,8 @@
 
 The `Build and deploy` GitHub Actions workflow in `.github/workflows/deploy.yml` derives lowercase GitHub Container Registry paths, publishes immutable SHA-tagged backend and frontend images on `main`, and can deploy those exact images to a protected Docker Compose host. No credential is stored in the repository.
 
+Image publication is a release artifact, not a public website. A live URL exists only after the remote deployment job has a reachable Docker host, the required GitHub environment secrets, and DNS/TLS routing to the frontend service.
+
 ## One-time host setup
 
 1. Install Docker Engine with the Compose plugin.
