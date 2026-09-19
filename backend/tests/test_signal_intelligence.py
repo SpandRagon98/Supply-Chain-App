@@ -417,6 +417,37 @@ async def test_postgresql_full_mock_ingestion_creates_canonical_incidents() -> N
                 select(Organization).where(Organization.slug == "nova-electronics")
             )
             assert organization is not None
+            initial_signal_count = int(
+                await session.scalar(
+                    select(func.count())
+                    .select_from(ExternalSignal)
+                    .where(ExternalSignal.organization_id == organization.id)
+                )
+                or 0
+            )
+            initial_incident_count = int(
+                await session.scalar(
+                    select(func.count())
+                    .select_from(DisruptionIncident)
+                    .where(DisruptionIncident.organization_id == organization.id)
+                )
+                or 0
+            )
+            initial_port_signal_count = int(
+                await session.scalar(
+                    select(func.count())
+                    .select_from(IncidentSignal)
+                    .join(
+                        DisruptionIncident,
+                        DisruptionIncident.id == IncidentSignal.incident_id,
+                    )
+                    .where(
+                        IncidentSignal.organization_id == organization.id,
+                        DisruptionIncident.incident_type == SignalCategory.PORT_CLOSURE,
+                    )
+                )
+                or 0
+            )
             tenant = TenantContext(organization_id=organization.id, user_id=None)
             signal_repository = SignalRepository(session, tenant)
             sink = SignalIngestionSink(SignalIntelligenceService(signal_repository, tenant))
@@ -474,9 +505,9 @@ async def test_postgresql_full_mock_ingestion_creates_canonical_incidents() -> N
 
             assert len(connectors) == 5
             assert sum(result.records_written for result in results) == 10
-            assert signal_count == 10
-            assert incident_count == 5
-            assert port_signal_count == 4
+            assert signal_count == initial_signal_count + 10
+            assert incident_count == initial_incident_count + 5
+            assert port_signal_count == initial_port_signal_count + 4
             assert shutdown_incident is not None
             assert shutdown_incident.status is IncidentStatus.UNDER_REVIEW
             assert shutdown_incident.severity is Severity.CRITICAL
