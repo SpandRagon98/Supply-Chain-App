@@ -1,6 +1,19 @@
 name: supply-chain-autopilot
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      API_URL: http://api:8000/api/v1
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend

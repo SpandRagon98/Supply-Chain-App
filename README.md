@@ -36,7 +36,7 @@ scripts/          Repeatable developer and verification commands
    powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1
    ```
 
-5. Confirm service health:
+5. Open the frontend at `http://localhost:3000` and confirm service health:
 
    ```powershell
    docker compose ps
@@ -57,7 +57,7 @@ Interactive API documentation is available at `http://localhost:8000/docs` outsi
 | Run backend checks | `cd backend; ruff check .; mypy app; pytest` |
 | Run migrations | `docker compose run --rm api alembic upgrade head` |
 | Seed or refresh Nova Electronics demo data | `powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1` |
-| Run frontend | Added in Phase 14 |
+| Run frontend | `cd frontend; npm install; npm run dev` |
 
 ## Design guardrails
 
@@ -67,7 +67,7 @@ Interactive API documentation is available at `http://localhost:8000/docs` outsi
 - All tenant-scoped domain data will use organization isolation and RBAC.
 - Workflow definitions and their published versions will be persisted and immutable after publication.
 
-The seeded network and its scenario-ready pressure points are documented in [Nova Electronics demo data](docs/demo-data.md).
+The seeded network and its scenario-ready pressure points are documented in [Nova Electronics demo data](docs/demo-data.md). GitHub Actions image publication and optional remote Docker Compose deployment are documented in [deployment](docs/deployment.md).
 
 ## License
 
