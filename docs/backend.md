@@ -38,6 +38,14 @@ Signal ingestion preserves raw and normalized payloads separately, uses determin
 | --- | --- | --- |
 | `GET /api/v1/health/live` | Confirms the process can serve HTTP | None |
 | `GET /api/v1/health/ready` | Confirms the process can perform useful work | PostgreSQL and Redis |
+| `GET /api/v1/dashboard/overview` | Tenant-scoped command-center aggregation | PostgreSQL |
+| `GET /api/v1/suppliers` | Supplier master-data table | PostgreSQL |
+| `GET /api/v1/inventory` | Inventory snapshot table | PostgreSQL |
+| `GET /api/v1/shipments` | Shipment status table | PostgreSQL |
+| `GET /api/v1/incidents` | Incident list and core lifecycle fields | PostgreSQL |
+| `GET /api/v1/incidents/{id}` | Impact, risk, and scenario evidence for one incident | PostgreSQL |
+
+Operational reads require an organization context. In non-production local development, the seeded Nova Electronics organization is used only when no `X-Organization-ID` header is supplied. Production rejects this fallback and requires an external identity integration to establish the tenant.
 
 Every HTTP response carries `X-Request-ID`. Structured request logs include the same ID, method, path, status, and duration. Later workflow execution adds `workflow_run_id` and `stage_run_id` to this context.
 
