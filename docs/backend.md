@@ -17,6 +17,7 @@ flowchart LR
 
 - `app.api`: transport contracts, versioned routers, and dependency injection.
 - `app.core`: validated settings, logging, middleware, and errors.
+- `app.connectors`: versioned adapter contracts, source records, mock providers, and registry.
 - `app.domain`: SQLAlchemy base and, from Phase 2 onward, domain entities and deterministic services.
 - `app.infrastructure`: database sessions, Redis, health checks, and later external adapters.
 - `app.workflows`: stage contracts, versioned handler registry, DAG validation, and execution.
@@ -25,6 +26,8 @@ flowchart LR
 HTTP controllers will translate requests and delegate work; they will not contain business workflow logic.
 
 Workflow authoring and execution use explicit tenant-scoped repositories and services. Published versions are immutable, and only registered, validated stage graphs can execute. See [workflow engine](workflow-engine.md) for the lifecycle and failure semantics.
+
+Connector execution uses the last successful checkpoint and persists record counts, content hashes, source URIs, and bounded failures. Raw provider data crosses a `ConnectorSink` boundary before canonical persistence. See [connector framework](connectors.md).
 
 ## Operational endpoints
 

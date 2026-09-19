@@ -39,3 +39,4 @@ This layout stays within one backend deployable until real operational needs jus
 
 The canonical persistence model and organization boundary are documented in [data-model.md](data-model.md).
 The versioned orchestration model, DAG rules, and stage contract are documented in [workflow-engine.md](workflow-engine.md).
+External adapter contracts, checkpointing, and source lineage are documented in [connectors.md](connectors.md).

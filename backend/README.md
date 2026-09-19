@@ -17,7 +17,7 @@ python -m app.seed
 uvicorn app.main:app --reload
 ```
 
-`python -m app.seed` inserts or refreshes the deterministic 892-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
+`python -m app.seed` inserts or refreshes the deterministic 897-record Nova Electronics dataset in one transaction. Stable identities make repeated runs safe.
 
 Run the worker in a second shell:
 
@@ -39,3 +39,5 @@ The readiness endpoint checks PostgreSQL and Redis. Liveness deliberately does n
 Repository and service code must receive an explicit `TenantContext`. Use `TenantRepository` or a domain-specific subclass for business data access; direct unscoped reads are not an accepted application pattern.
 
 Workflow code is split across `app.workflows` (contracts, registry, validation, execution), `app.services.workflows` (draft/publish/clone lifecycle), and `app.repositories.workflows` (tenant-scoped persistence). Published workflow versions cannot be changed in place.
+
+Connector code is split across `app.connectors` (adapter contracts, mock sources, registry), `app.services.connectors` (checkpointed execution and lineage), and `app.repositories.connectors` (tenant-scoped configurations and run telemetry).

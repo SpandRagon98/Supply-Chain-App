@@ -67,3 +67,25 @@ class StageHandlerNotFoundError(ApplicationError):
             message=f"Stage handler '{key}' version '{version}' is not registered.",
             status_code=422,
         )
+
+
+class ConnectorNotFoundError(ApplicationError):
+    """Raised when a connector or adapter is unavailable in the active tenant."""
+
+    def __init__(self, resource: str) -> None:
+        super().__init__(
+            code="connector_not_found",
+            message=f"The requested {resource} was not found.",
+            status_code=404,
+        )
+
+
+class ConnectorUnavailableError(ApplicationError):
+    """Raised when a configured connector cannot currently execute."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(
+            code="connector_unavailable",
+            message=message,
+            status_code=409,
+        )

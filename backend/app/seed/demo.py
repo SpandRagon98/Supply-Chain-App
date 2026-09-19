@@ -11,10 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.base import EntityBase
-from app.domain.enums import FacilityType, OrderStatus, RoleKey, ShipmentStatus
+from app.domain.enums import ConnectorStatus, FacilityType, OrderStatus, RoleKey, ShipmentStatus
 from app.domain.models import (
     BillOfMaterial,
     BOMComponent,
+    Connector,
     ConsumptionHistory,
     Customer,
     CustomerOrder,
@@ -428,6 +429,27 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
             assigned_by_user_id=user_by_email["admin@nova.example"].id,
         )
         for email, _name, role_key in user_specs
+    )
+
+    connector_specs = (
+        ("nova-erp", "Nova ERP", "ERP", "mock.erp@1.0"),
+        ("global-weather", "Global Weather", "WEATHER", "mock.weather@1.0"),
+        ("trusted-news", "Trusted News", "NEWS", "mock.news@1.0"),
+        ("ocean-tracking", "Ocean Shipment Tracking", "SHIPMENT", "mock.shipment@1.0"),
+        ("supplier-feed", "Supplier Status Feed", "SUPPLIER", "mock.supplier@1.0"),
+    )
+    connectors = tuple(
+        Connector(
+            id=demo_id("connector", key),
+            organization_id=org_id,
+            key=key,
+            name=name,
+            connector_type=connector_type,
+            adapter=adapter,
+            status=ConnectorStatus.MOCK_MODE,
+            configuration={"mode": "mock", "batch_size": 100},
+        )
+        for key, name, connector_type, adapter in connector_specs
     )
 
     suppliers = tuple(
@@ -924,7 +946,16 @@ def build_demo_dataset(organization_id: UUID | None = None) -> DemoDataset:
 
     stages: tuple[tuple[EntityBase, ...], ...] = (
         (organization,),
-        (*roles, *users, *suppliers, *materials, *products, *facilities, *customers),
+        (
+            *roles,
+            *users,
+            *connectors,
+            *suppliers,
+            *materials,
+            *products,
+            *facilities,
+            *customers,
+        ),
         (*user_roles, *supplier_sites, *supplier_ratings, *material_suppliers, *bills_of_material),
         (
             *bom_components,
