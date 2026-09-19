@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
     cors_origins: str = "http://localhost:3000"
+    ai_provider: str = "mock"
+    ai_model: str = "gpt-4.1-mini"
+    openai_api_key: str | None = None
 
     @property
     def cors_origin_list(self) -> list[str]:
